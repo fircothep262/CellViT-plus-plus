@@ -25,7 +25,6 @@ from cellvit.training.base_ml.base_early_stopping import EarlyStopping
 from cellvit.training.base_ml.base_experiment import BaseExperiment
 from cellvit.training.datasets.base_cell_dataset import BaseCellEmbeddingDataset
 from cellvit.training.trainer.trainer_cell_classifier import CellViTHeadTrainer
-from einops import rearrange
 from torch.optim import Optimizer
 from torch.optim.lr_scheduler import _LRScheduler
 from torch.utils.data import DataLoader
@@ -537,7 +536,7 @@ class CellViTHeadTrainerSegPath(CellViTHeadTrainer):
         negative_count = 0
         positive_count = 0
 
-        image_size = images.shape[2]
+        image_size = list(images.shape[2:])
         images = images.to(self.device)
         if self.mixed_precision:
             with torch.autocast(device_type="cuda", dtype=torch.float16):
@@ -608,36 +607,3 @@ class CellViTHeadTrainerSegPath(CellViTHeadTrainer):
         )
         predictions["hv_map"] = predictions["hv_map"].permute(0, 2, 3, 1)
         return predictions
-
-    def extract_tokens(self, cell_pred_dict: dict, predictions: dict) -> List:
-        """Extract cell tokens associated to cells
-
-        Args:
-            cell_pred_dict (dict): Cell prediction dict
-            predictions (dict): Prediction dict
-
-        Returns:
-            List: List of topkens for each patch
-        """
-        batch_tokens = []
-        for patch_idx, patch_cell_pred_dict in enumerate(cell_pred_dict):
-            extracted_cell_tokens = []
-            patch_tokens = predictions["tokens"][patch_idx]
-            for cell in patch_cell_pred_dict.values():
-                bbox = cell["bbox"]
-                bb_index = (
-                    cell["bbox"] / 16  # TODO: where to get this from?
-                )  # self.cellvit_model["model"]["token_patch_size"]
-                bb_index[0, :] = np.floor(bb_index[0, :])
-                bb_index[1, :] = np.ceil(bb_index[1, :])
-                bb_index = bb_index.astype(np.uint8)
-                cell_token = patch_tokens[
-                    :, bb_index[0, 0] : bb_index[1, 0], bb_index[0, 1] : bb_index[1, 1]
-                ]
-                cell_token = torch.mean(
-                    rearrange(cell_token, "D H W -> (H W) D"), dim=0
-                )
-                extracted_cell_tokens.append(cell_token.detach().cpu())
-            batch_tokens.append(extracted_cell_tokens)
-
-        return batch_tokens

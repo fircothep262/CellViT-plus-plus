@@ -409,7 +409,6 @@ class SegPathCellViT:
         extracted_cells = []
         negative_count = 0
         positive_count = 0
-        image_size = images.shape[2]
         images = images.to(self.device)
         if self.mixed_precision:
             with torch.autocast(device_type="cuda", dtype=torch.float16):
@@ -420,7 +419,7 @@ class SegPathCellViT:
         # transform predictions and create tokens
         predictions = self._apply_softmax_reorder(predictions)
         inst_map, cell_pred_dict = postprocessor.post_process_batch(predictions)
-        tokens = self._extract_tokens(cell_pred_dict, predictions, image_size)
+        tokens = self._extract_tokens(cell_pred_dict, predictions)
 
         for pred_dict, mask, patch_token, image_name in zip(
             cell_pred_dict, masks, tokens, image_names
