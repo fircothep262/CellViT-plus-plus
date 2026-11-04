@@ -661,7 +661,10 @@ class BatchPoolingActor:
             batch_cell_tokens = batch_cell_tokens + patch_cell_tokens
             batch_cell_positions = batch_cell_positions + patch_cell_positions
 
-        if self.detection_cell_postprocessor.classifier is not None:
+        if (
+            self.detection_cell_postprocessor.classifier is not None
+            and len(batch_cell_tokens) > 0
+        ):
             batch_cell_tokens_pt = torch.stack(batch_cell_tokens)
             updated_preds = self.detection_cell_postprocessor.classifier(
                 batch_cell_tokens_pt
@@ -675,7 +678,7 @@ class BatchPoolingActor:
             for f, z in zip(batch_complete, updated_classes):
                 f["type"] = int(z)
             for f, z in zip(batch_complete, updated_class_preds):
-                f["type_prob"] = int(z)
+                f["type_prob"] = float(z)
             for f, z in zip(batch_detection, updated_classes):
                 f["type"] = int(z)
         if self.detection_cell_postprocessor.binary:
