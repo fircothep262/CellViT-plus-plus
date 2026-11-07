@@ -531,7 +531,7 @@ class SegPathCellViT:
             postprocessor = DetectionCellPostProcessorCupy(wsi=None, nr_types=6)
             cellvit_dl = DataLoader(
                 self.inference_dataset,
-                batch_size=16,
+                batch_size=8,
                 num_workers=8,
                 shuffle=False,
                 collate_fn=self.inference_dataset.collate_batch,
